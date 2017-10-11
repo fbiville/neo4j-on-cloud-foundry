@@ -14,7 +14,7 @@ import picocli.CommandLine.Parameters
 
 @Command(name = "generate-manifest")
 class GenerateManifestCommand(val manifestGenerator: ManifestGenerator,
-                              val yamlSerializer: YamlSerializer) {
+                              val yamlSerializer: YamlSerializer) : ServiceAdapterCommand {
 
 
     @Parameters(index = "0", arity = "1")
@@ -33,7 +33,7 @@ class GenerateManifestCommand(val manifestGenerator: ManifestGenerator,
     var previousPlan: Plan? = null
 
 
-    fun execute(): CommandOutput {
+    override fun execute(): CommandOutput {
 
         val manifest = manifestGenerator.generateManifest(
                 serviceDeployment,

@@ -1,6 +1,8 @@
 package org.neo4j.cloudfoundry.odb.adapter
 
+import org.neo4j.cloudfoundry.odb.adapter.command.DashboardUrlCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.GenerateManifestCommand
+import org.neo4j.cloudfoundry.odb.adapter.command.ServiceAdapterCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.converter.ManifestConverter
 import org.neo4j.cloudfoundry.odb.adapter.command.converter.PlanConverter
 import org.neo4j.cloudfoundry.odb.adapter.command.converter.RequestParametersConverter
@@ -23,11 +25,13 @@ import picocli.CommandLine.Command
 @Command
 class MainCommand
 
-class App(private val generateManifestCommand: GenerateManifestCommand) {
+class App(private val generateManifestCommand: GenerateManifestCommand,
+          private val dashboardUrlCommand: DashboardUrlCommand) {
 
     fun execute(args: Array<String>) {
         val commandLine = CommandLine(MainCommand())
                 .addSubcommand("generate-manifest", generateManifestCommand)
+                .addSubcommand("dashboard-url", dashboardUrlCommand)
                 .registerConverter(Manifest::class.java, ManifestConverter())
                 .registerConverter(RequestParameters::class.java, RequestParametersConverter())
                 .registerConverter(Plan::class.java, PlanConverter())
@@ -35,7 +39,7 @@ class App(private val generateManifestCommand: GenerateManifestCommand) {
 
         val commands = commandLine.parse(*args)
 
-        val output = (commands.last().command as GenerateManifestCommand).execute()
+        val output = (commands.last().command as ServiceAdapterCommand).execute()
         when (output) {
             is CommandOutput.Standard -> {
                 print(output.content)
@@ -45,12 +49,17 @@ class App(private val generateManifestCommand: GenerateManifestCommand) {
                 System.err.print(output.errorMessage)
                 System.exit(errorStatus)
             }
+            is CommandOutput.Unsupported -> {
+                System.err.print(output.warningMessage)
+                System.exit(warningStatus)
+            }
         }
     }
 
     companion object {
         val successStatus = 0
         val errorStatus = 42
+        val warningStatus = 10
         val deserializationError = { name: String -> "Parameter '$name' cannot be deserialized" }
         val missingMandatoryFieldsError = { name: String, missing: List<String> -> "Parameter '$name' is missing mandatory parameters: ${missing.joinToString(", ")}" }
         val packageToScanForMissingFields = "org.neo4j.cloudfoundry.odb.adapter"
@@ -69,6 +78,7 @@ fun main(args: Array<String>) {
             ),
             YamlSerializer()
     )
+    val dashboardUrlCommand = DashboardUrlCommand()
 
-    App(generateManifest).execute(args)
+    App(generateManifest, dashboardUrlCommand).execute(args)
 }

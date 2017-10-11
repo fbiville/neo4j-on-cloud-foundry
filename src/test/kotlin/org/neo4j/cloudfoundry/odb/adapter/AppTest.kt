@@ -8,6 +8,7 @@ import org.junit.Test
 import org.junit.contrib.java.lang.system.ExpectedSystemExit
 import org.junit.contrib.java.lang.system.SystemErrRule
 import org.junit.contrib.java.lang.system.SystemOutRule
+import org.neo4j.cloudfoundry.odb.adapter.command.DashboardUrlCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.Fixtures
 import org.neo4j.cloudfoundry.odb.adapter.command.GenerateManifestCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.error.CommandOutput
@@ -24,7 +25,8 @@ class AppTest {
     val systemErr = SystemErrRule().enableLog().muteForSuccessfulTests()
 
     private val generateManifestCommand = mock<GenerateManifestCommand>()
-    private val subject = App(generateManifestCommand)
+    private val dashboardUrlCommand = mock<DashboardUrlCommand>()
+    private val subject = App(generateManifestCommand, dashboardUrlCommand)
 
     @Test
     fun `generates a manifest`() {
@@ -49,4 +51,18 @@ class AppTest {
         assertThat(systemErr.log).isEqualTo(errorMessage)
         assertThat(systemOut.log).isEmpty()
     }
+
+    @Test
+    fun `does not support the dashboard-url command`() {
+        exitStatus.expectSystemExitWithStatus(10)
+        val warningMessage = "Not supported\nSorry."
+
+        whenever(dashboardUrlCommand.execute()).thenReturn(CommandOutput.Unsupported(warningMessage))
+
+        subject.execute(arrayOf("dashboard-url", "some-uid", Fixtures.planJson, Fixtures.manifestYaml))
+
+        assertThat(systemErr.log).isEqualTo(warningMessage)
+        assertThat(systemOut.log).isEmpty()
+    }
 }
+
