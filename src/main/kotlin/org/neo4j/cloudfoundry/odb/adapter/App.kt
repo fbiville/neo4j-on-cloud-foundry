@@ -12,6 +12,7 @@ import org.neo4j.cloudfoundry.odb.adapter.command.generator.InstanceGroupGenerat
 import org.neo4j.cloudfoundry.odb.adapter.command.generator.JobGenerator
 import org.neo4j.cloudfoundry.odb.adapter.command.generator.ManifestGenerator
 import org.neo4j.cloudfoundry.odb.adapter.command.generator.NetworkGenerator
+import org.neo4j.cloudfoundry.odb.adapter.command.generator.PasswordGenerator
 import org.neo4j.cloudfoundry.odb.adapter.command.generator.ReleaseGenerator
 import org.neo4j.cloudfoundry.odb.adapter.command.generator.StemcellGenerator
 import org.neo4j.cloudfoundry.odb.adapter.domain.RequestParameters
@@ -74,7 +75,8 @@ fun main(args: Array<String>) {
                             NetworkGenerator()
                     ),
                     StemcellGenerator(),
-                    ReleaseGenerator()
+                    ReleaseGenerator(),
+                    PasswordGenerator()
             ),
             YamlSerializer()
     )

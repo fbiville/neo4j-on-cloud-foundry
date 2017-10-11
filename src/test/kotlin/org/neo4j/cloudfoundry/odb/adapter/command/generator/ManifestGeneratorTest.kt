@@ -1,11 +1,10 @@
 package org.neo4j.cloudfoundry.odb.adapter.command.generator
 
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.mock
 import org.neo4j.cloudfoundry.odb.adapter.command.Fixtures
 import org.neo4j.cloudfoundry.odb.adapter.command.error.JobNotFound
 import org.neo4j.cloudfoundry.odb.adapter.command.error.ManifestCommandError
@@ -14,26 +13,31 @@ import org.neo4j.cloudfoundry.odb.adapter.command.error.ReleaseNotFound
 import org.neo4j.cloudfoundry.odb.adapter.domain.Either
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Assertions.assertThat
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
+import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestProperties
 import org.neo4j.cloudfoundry.odb.adapter.domain.plan.Plan
 
 class ManifestGeneratorTest {
 
-    private val instanceGroupGenerator = mock(InstanceGroupGenerator::class.java)
-    private val stemcellGenerator = mock(StemcellGenerator::class.java)
-    private val releaseGenerator = mock(ReleaseGenerator::class.java)
+    private val instanceGroupGenerator = mock<InstanceGroupGenerator>()
+    private val stemcellGenerator = mock<StemcellGenerator>()
+    private val releaseGenerator = mock<ReleaseGenerator>()
+    private val passwordGenerator = mock<PasswordGenerator>()
     private val subject = ManifestGenerator(
             instanceGroupGenerator,
             stemcellGenerator,
-            releaseGenerator)
+            releaseGenerator,
+            passwordGenerator)
+    private val password = "c0p1-2-soop!"
 
     @Before
     fun prepare() {
-        `when`(instanceGroupGenerator.generateInstanceGroup(Fixtures.instanceGroup, Fixtures.serviceDeployment))
+        whenever(instanceGroupGenerator.generateInstanceGroup(Fixtures.instanceGroup, Fixtures.serviceDeployment))
                 .thenReturn(Either.Right(Fixtures.manifestInstanceGroup))
-        `when`(stemcellGenerator.generateStemcell(Fixtures.stemcell))
+        whenever(stemcellGenerator.generateStemcell(Fixtures.stemcell))
                 .thenReturn(Fixtures.manifestStemcell)
-        `when`(releaseGenerator.generateRelease(Fixtures.release))
+        whenever(releaseGenerator.generateRelease(Fixtures.release))
                 .thenReturn(Fixtures.manifestRelease)
+        whenever(passwordGenerator.generate()).thenReturn(password)
     }
 
     @Test
@@ -47,12 +51,13 @@ class ManifestGeneratorTest {
                 .hasReleases(Fixtures.manifestRelease)
                 .hasStemcells(Fixtures.manifestStemcell)
                 .hasInstance_groups(Fixtures.manifestInstanceGroup)
+                .hasProperties(ManifestProperties(password))
     }
 
     @Test
     fun `fails if instance groups cannot be generated`() {
         val listOfErrors = listOf(JobNotFound("neo4j"), ReleaseNotFound("neo4j"))
-        `when`(instanceGroupGenerator.generateInstanceGroup(
+        whenever(instanceGroupGenerator.generateInstanceGroup(
                 Fixtures.instanceGroup,
                 Fixtures.serviceDeployment)
         ).thenReturn(Either.Left(listOfErrors))
@@ -65,7 +70,7 @@ class ManifestGeneratorTest {
 
     @Test
     fun `fails if previous manifest is provided`() {
-        val previousManifest = Mockito.mock(Manifest::class.java)
+        val previousManifest = mock<Manifest>()
 
         val errors = subject.generateManifest(Fixtures.serviceDeployment, Fixtures.plan, mapOf(), previousManifest)
                 as Either.Left<List<ManifestCommandError>>
@@ -75,7 +80,7 @@ class ManifestGeneratorTest {
 
     @Test
     fun `fails if previous plan is provided`() {
-        val previousPlan = Mockito.mock(Plan::class.java)
+        val previousPlan = mock<Plan>()
 
         val errors = subject.generateManifest(Fixtures.serviceDeployment, Fixtures.plan, mapOf(), previousPlan = previousPlan)
                 as Either.Left<List<ManifestCommandError>>

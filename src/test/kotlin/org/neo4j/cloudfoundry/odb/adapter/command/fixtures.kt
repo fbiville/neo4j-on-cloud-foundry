@@ -4,6 +4,7 @@ import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestInstanceGroup
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestJob
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestNetwork
+import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestProperties
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestRelease
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestStemcell
 import org.neo4j.cloudfoundry.odb.adapter.domain.plan.Plan
@@ -32,7 +33,13 @@ class Fixtures {
                 canary_watch_time = "5000-60000",
                 update_watch_time = "5000-60000"
         )
-        val manifest = Manifest(name = "neo4j", releases = arrayOf(manifestRelease), stemcells = arrayOf(manifestStemcell), update = update, instance_groups = arrayOf(manifestInstanceGroup))
+        val manifest = Manifest(
+                name = "neo4j",
+                releases = arrayOf(manifestRelease),
+                stemcells = arrayOf(manifestStemcell),
+                update = update,
+                instance_groups = arrayOf(manifestInstanceGroup),
+                properties = ManifestProperties("pff"))
         val release = ServiceRelease(
                 name = "neo4j",
                 version = "latest",
@@ -90,6 +97,9 @@ class Fixtures {
             |  persistent_disk_type: 10240
             |  networks:
             |  - name: default
+            |
+            |properties:
+            |  admin_password: pff
             """.trimMargin()
 
         val serviceDeploymentJson = """{

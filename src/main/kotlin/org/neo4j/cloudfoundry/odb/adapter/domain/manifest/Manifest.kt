@@ -13,7 +13,7 @@ data class Manifest(@Mandatory var name: String?,
                     @Mandatory var stemcells: Array<ManifestStemcell>?,
                     @Mandatory var update: Update?,
                     @Mandatory var instance_groups: Array<ManifestInstanceGroup>?,
-                    var properties: Map<String, String>? = null,
+                    @Mandatory var properties: ManifestProperties?,
                     var variables: Array<ManifestVariable>? = null) {
 
     override fun equals(other: Any?): Boolean {
