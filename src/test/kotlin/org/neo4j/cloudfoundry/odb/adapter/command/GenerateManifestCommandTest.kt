@@ -1,5 +1,7 @@
 package org.neo4j.cloudfoundry.odb.adapter.command
 
+import com.nhaarman.mockito_kotlin.any
+import com.nhaarman.mockito_kotlin.eq
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
@@ -11,6 +13,7 @@ import org.neo4j.cloudfoundry.odb.adapter.command.error.MigrationNotSupported
 import org.neo4j.cloudfoundry.odb.adapter.command.generator.ManifestGenerator
 import org.neo4j.cloudfoundry.odb.adapter.domain.Either
 import org.neo4j.cloudfoundry.odb.adapter.domain.RequestParameters
+import org.neo4j.cloudfoundry.odb.adapter.serializer.ManifestRepresenter
 import org.neo4j.cloudfoundry.odb.adapter.serializer.YamlSerializer
 
 class GenerateManifestCommandTest {
@@ -34,7 +37,7 @@ class GenerateManifestCommandTest {
         val result = subject.execute()
 
         assertThat(result).isEqualTo(CommandOutput.Error(
-                "Could not find job for instance group name neo4j" +
+                1, "Could not find job for instance group name neo4j" +
                         "\nServiceMigration is not supported yet"))
     }
 
@@ -45,7 +48,7 @@ class GenerateManifestCommandTest {
                 .thenReturn(manifest)
 
         val expectedOutput = "result: yay\nyou: win"
-        whenever(yamlSerializer.serialize(manifest.value)).thenReturn(expectedOutput)
+        whenever(yamlSerializer.serialize(any(), eq(manifest.value))).thenReturn(expectedOutput)
 
         val result = subject.execute()
 

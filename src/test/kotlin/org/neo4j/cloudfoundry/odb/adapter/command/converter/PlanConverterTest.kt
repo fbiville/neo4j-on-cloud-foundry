@@ -1,5 +1,6 @@
 package org.neo4j.cloudfoundry.odb.adapter.command.converter
 
+import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.eq
@@ -14,10 +15,13 @@ import picocli.CommandLine
 
 class PlanConverterTest {
 
+    private val gson = Gson()
+    private val subject = PlanConverter(gson, MandatoryFieldsValidator())
+
     @Test
     fun `fails when the Plan payload is not valid`() {
         assertThatExceptionOfType(CommandLine.ParameterException::class.java)
-                .isThrownBy { PlanConverter().convert("""\salut\""") }
+                .isThrownBy { subject.convert("""\salut\""") }
                 .withMessage("Parameter 'plan' cannot be deserialized")
                 .withCauseInstanceOf(JsonSyntaxException::class.java)
     }
@@ -27,7 +31,7 @@ class PlanConverterTest {
         val mandatoryFieldsValidator = mock<MandatoryFieldsValidator>()
         whenever(mandatoryFieldsValidator.validate(any<Plan>(), eq("")))
                 .thenReturn(listOf("jean", "bonneau"))
-        val subject = PlanConverter(mandatoryFieldsValidator)
+        val subject = PlanConverter(gson, mandatoryFieldsValidator)
 
         assertThatExceptionOfType(CommandLine.ParameterException::class.java)
                 .isThrownBy { subject.convert("{}") }
@@ -36,8 +40,6 @@ class PlanConverterTest {
 
     @Test
     fun `converts a valid Plan payload`() {
-        val subject = PlanConverter(MandatoryFieldsValidator())
-
         assertThat(subject.convert(Fixtures.planJson)).isEqualTo(Fixtures.plan)
     }
 }

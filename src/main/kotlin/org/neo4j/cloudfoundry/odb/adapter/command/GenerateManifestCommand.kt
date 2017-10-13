@@ -8,6 +8,7 @@ import org.neo4j.cloudfoundry.odb.adapter.domain.RequestParameters
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
 import org.neo4j.cloudfoundry.odb.adapter.domain.plan.Plan
 import org.neo4j.cloudfoundry.odb.adapter.domain.servicedeployment.ServiceDeployment
+import org.neo4j.cloudfoundry.odb.adapter.serializer.ManifestRepresenter
 import org.neo4j.cloudfoundry.odb.adapter.serializer.YamlSerializer
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
@@ -44,8 +45,8 @@ class GenerateManifestCommand(val manifestGenerator: ManifestGenerator,
         )
 
         return when (manifest) {
-            is Either.Left<List<ManifestCommandError>> -> CommandOutput.Error(concatErrors(manifest.value))
-            is Either.Right<Manifest> -> CommandOutput.Standard(yamlSerializer.serialize(manifest.value))
+            is Either.Left<List<ManifestCommandError>> -> CommandOutput.Error(1, concatErrors(manifest.value))
+            is Either.Right<Manifest> -> CommandOutput.Standard(yamlSerializer.serialize(ManifestRepresenter(), manifest.value))
         }
 
     }

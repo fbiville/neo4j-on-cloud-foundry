@@ -1,5 +1,6 @@
 package org.neo4j.cloudfoundry.odb.adapter.command
 
+import org.neo4j.cloudfoundry.odb.adapter.domain.BoshVms
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestInstanceGroup
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestJob
@@ -134,6 +135,25 @@ class Fixtures {
                 "max_in_flight": 1,
                 "canary_watch_time": "5000-60000",
                 "update_watch_time": "5000-60000"
+            }
+        }""".trimIndent()
+
+        val boshVmJson = """{
+          "neo4j": ["192.0.2.1", "192.0.2.2", "192.0.2.3"]
+        }""".trimIndent()
+
+        val bindingJson = """{
+            "credentials": {
+                "username": "awesome-binding-id",
+                "password": "super_s3cr3t"
+            }
+        }""".trimIndent()
+
+        val boshVms = BoshVms(arrayOf("192.0.2.1", "192.0.2.2", "192.0.2.3"))
+        val credentialsJson = """{
+            "credentials": {
+                "username": "username",
+                "password": "password-impossible-to-decipher"
             }
         }""".trimIndent()
     }

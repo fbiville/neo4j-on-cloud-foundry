@@ -9,11 +9,14 @@ import org.assertj.core.api.Assertions.assertThatExceptionOfType
 import org.junit.Test
 import org.neo4j.cloudfoundry.odb.adapter.command.Fixtures
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
+import org.neo4j.cloudfoundry.odb.adapter.serializer.YamlSerializer
+import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.ConstructorException
 import picocli.CommandLine.ParameterException
 
 class ManifestConverterTest {
-    val subject = ManifestConverter()
+
+    private val subject = ManifestConverter(YamlSerializer(), MandatoryFieldsValidator())
 
     @Test
     fun `fails when the Manifest payload has unknown properties`() {
@@ -32,7 +35,7 @@ class ManifestConverterTest {
         val mandatoryFieldsValidator = mock<MandatoryFieldsValidator>()
         whenever(mandatoryFieldsValidator.validate(any<Manifest>(), eq(""))).thenReturn(listOf("param1", "param2", "param3.nested"))
 
-        val subject = ManifestConverter(mandatoryFieldsValidator)
+        val subject = ManifestConverter(YamlSerializer(), mandatoryFieldsValidator)
 
         assertThatExceptionOfType(ParameterException::class.java)
                 .isThrownBy { subject.convert(manifest) }

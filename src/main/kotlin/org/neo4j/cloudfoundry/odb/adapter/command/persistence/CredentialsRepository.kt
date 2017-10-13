@@ -1,0 +1,30 @@
+package org.neo4j.cloudfoundry.odb.adapter.command.persistence
+
+import org.neo4j.cloudfoundry.odb.adapter.command.generator.PasswordGenerator
+import org.neo4j.cloudfoundry.odb.adapter.domain.Credentials
+import org.neo4j.cloudfoundry.odb.adapter.domain.User
+import org.neo4j.driver.v1.AccessMode
+import org.neo4j.driver.v1.Driver
+
+class CredentialsRepository(val passwordGenerator: PasswordGenerator) {
+
+    @Throws(PersistenceError::class)
+    fun exists(driver: Driver, bindingId: String): Boolean {
+        driver.session(AccessMode.READ).use {
+            return it.run("CALL dbms.security.listUsers() YIELD username RETURN username")
+                    .list { it.get("username").asString() }
+                    .contains(bindingId)
+        }
+    }
+
+    @Throws(PersistenceError::class)
+    fun save(driver: Driver, userId: String): Credentials {
+        val password = passwordGenerator.generate()
+        driver.session(AccessMode.WRITE).use {
+            it.run("CALL dbms.security.createUser({username}, {password}, false)",
+                    mapOf(Pair("username", userId), Pair("password", password)))
+            return Credentials(User(userId, password))
+        }
+    }
+}
+

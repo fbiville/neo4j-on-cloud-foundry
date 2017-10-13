@@ -10,7 +10,7 @@ import picocli.CommandLine.Command
 class DashboardUrlCommand : ServiceAdapterCommand {
 
     @CommandLine.Parameters(index = "0", arity = "1")
-    lateinit var bindingId: String
+    lateinit var instanceId: String
 
     @CommandLine.Parameters(index = "1", arity = "1")
     lateinit var plan: Plan

@@ -1,6 +1,5 @@
 package org.neo4j.cloudfoundry.odb.adapter.command.converter
 
-import org.neo4j.cloudfoundry.odb.adapter.App
 import org.neo4j.cloudfoundry.odb.adapter.domain.Mandatory
 import java.lang.reflect.Field
 import java.util.Spliterator
@@ -9,10 +8,12 @@ import java.util.stream.Collectors
 import java.util.stream.Stream
 import java.util.stream.StreamSupport
 
-internal class MandatoryFieldsValidator() {
+class MandatoryFieldsValidator {
+
+    private val scannedPackage = "org.neo4j.cloudfoundry.odb.adapter"
 
     fun validate(enclosingInstance: Any?, prefix: String = ""): List<String> {
-        if (enclosingInstance == null || !enclosingInstance::class.java.name.startsWith(App.packageToScanForMissingFields)) {
+        if (enclosingInstance == null || !enclosingInstance::class.java.name.startsWith(scannedPackage)) {
             return listOf()
         }
         return streamOf(enclosingInstance.javaClass.declaredFields.iterator())

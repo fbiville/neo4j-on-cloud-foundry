@@ -1,5 +1,6 @@
 package org.neo4j.cloudfoundry.odb.adapter.command.converter
 
+import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatExceptionOfType
@@ -8,7 +9,8 @@ import org.junit.Test
 import picocli.CommandLine.ParameterException
 
 class RequestParametersConverterTest {
-    val subject = RequestParametersConverter()
+
+    private val subject = RequestParametersConverter(Gson())
 
     @Test
     fun `fails with invalid Map{String, String} payload`() {

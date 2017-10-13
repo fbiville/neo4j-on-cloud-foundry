@@ -10,35 +10,36 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatExceptionOfType
 import org.junit.Test
 import org.neo4j.cloudfoundry.odb.adapter.command.Fixtures
-import org.neo4j.cloudfoundry.odb.adapter.domain.servicedeployment.ServiceDeployment
+import org.neo4j.cloudfoundry.odb.adapter.domain.BoshVms
 import picocli.CommandLine
 
-class ServiceDeploymentConverterTest {
+class BoshVmConverterTest {
 
-    private val subject = ServiceDeploymentConverter(Gson(), MandatoryFieldsValidator())
+    private val gson = Gson()
+    private val subject = BoshVmConverter(gson, MandatoryFieldsValidator())
 
     @Test
-    fun `fails when the Service Deployment payload is not valid`() {
+    fun `fails when the payload is not valid`() {
         assertThatExceptionOfType(CommandLine.ParameterException::class.java)
                 .isThrownBy { subject.convert("""\salut\""") }
-                .withMessage("Parameter 'service-deployment' cannot be deserialized")
+                .withMessage("Parameter 'bosh-VMs' cannot be deserialized")
                 .withCauseInstanceOf(JsonSyntaxException::class.java)
     }
 
     @Test
-    fun `fails when the Service Deployment payload is incomplete`() {
+    fun `fails when the payload is incomplete`() {
         val mandatoryFieldsValidator = mock<MandatoryFieldsValidator>()
-        val subject = ServiceDeploymentConverter(Gson(), mandatoryFieldsValidator)
-        whenever(mandatoryFieldsValidator.validate(any<ServiceDeployment>(), eq(""))).thenReturn(listOf("truc", "machin"))
+        whenever(mandatoryFieldsValidator.validate(any<BoshVms>(), eq("")))
+                .thenReturn(listOf("jean", "bonneau"))
+        val subject = BoshVmConverter(gson, mandatoryFieldsValidator)
 
         assertThatExceptionOfType(CommandLine.ParameterException::class.java)
                 .isThrownBy { subject.convert("{}") }
-                .withMessage("Parameter 'service-deployment' is missing mandatory parameters: truc, machin")
+                .withMessage("Parameter 'bosh-VMs' is missing mandatory parameters: jean, bonneau")
     }
 
     @Test
-    fun `converts a valid Service Deployment payload`() {
-        assertThat(subject.convert(Fixtures.serviceDeploymentJson)).isEqualTo(Fixtures.serviceDeployment)
+    fun `converts a valid payload`() {
+        assertThat(subject.convert(Fixtures.boshVmJson)).isEqualTo(Fixtures.boshVms)
     }
 }
-

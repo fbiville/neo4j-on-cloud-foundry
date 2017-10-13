@@ -1,8 +1,12 @@
 package org.neo4j.cloudfoundry.odb.adapter
 
+import com.google.gson.Gson
+import org.neo4j.cloudfoundry.odb.adapter.command.CreateBindingCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.DashboardUrlCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.GenerateManifestCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.ServiceAdapterCommand
+import org.neo4j.cloudfoundry.odb.adapter.command.converter.BoshVmConverter
+import org.neo4j.cloudfoundry.odb.adapter.command.converter.MandatoryFieldsValidator
 import org.neo4j.cloudfoundry.odb.adapter.command.converter.ManifestConverter
 import org.neo4j.cloudfoundry.odb.adapter.command.converter.PlanConverter
 import org.neo4j.cloudfoundry.odb.adapter.command.converter.RequestParametersConverter
@@ -15,6 +19,8 @@ import org.neo4j.cloudfoundry.odb.adapter.command.generator.NetworkGenerator
 import org.neo4j.cloudfoundry.odb.adapter.command.generator.PasswordGenerator
 import org.neo4j.cloudfoundry.odb.adapter.command.generator.ReleaseGenerator
 import org.neo4j.cloudfoundry.odb.adapter.command.generator.StemcellGenerator
+import org.neo4j.cloudfoundry.odb.adapter.command.persistence.CredentialsRepository
+import org.neo4j.cloudfoundry.odb.adapter.domain.BoshVms
 import org.neo4j.cloudfoundry.odb.adapter.domain.RequestParameters
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
 import org.neo4j.cloudfoundry.odb.adapter.domain.plan.Plan
@@ -27,16 +33,22 @@ import picocli.CommandLine.Command
 class MainCommand
 
 class App(private val generateManifestCommand: GenerateManifestCommand,
-          private val dashboardUrlCommand: DashboardUrlCommand) {
+          private val dashboardUrlCommand: DashboardUrlCommand,
+          private val createBindingCommand: CreateBindingCommand,
+          private val gson: Gson,
+          private val yamlSerializer: YamlSerializer) {
 
     fun execute(args: Array<String>) {
+        val mandatoryFieldsValidator = MandatoryFieldsValidator()
         val commandLine = CommandLine(MainCommand())
                 .addSubcommand("generate-manifest", generateManifestCommand)
                 .addSubcommand("dashboard-url", dashboardUrlCommand)
-                .registerConverter(Manifest::class.java, ManifestConverter())
-                .registerConverter(RequestParameters::class.java, RequestParametersConverter())
-                .registerConverter(Plan::class.java, PlanConverter())
-                .registerConverter(ServiceDeployment::class.java, ServiceDeploymentConverter())
+                .addSubcommand("create-binding", createBindingCommand)
+                .registerConverter(Manifest::class.java, ManifestConverter(yamlSerializer, mandatoryFieldsValidator))
+                .registerConverter(RequestParameters::class.java, RequestParametersConverter(gson))
+                .registerConverter(Plan::class.java, PlanConverter(gson, mandatoryFieldsValidator))
+                .registerConverter(ServiceDeployment::class.java, ServiceDeploymentConverter(gson, mandatoryFieldsValidator))
+                .registerConverter(BoshVms::class.java, BoshVmConverter(gson, mandatoryFieldsValidator))
 
         val commands = commandLine.parse(*args)
 
@@ -44,31 +56,28 @@ class App(private val generateManifestCommand: GenerateManifestCommand,
         when (output) {
             is CommandOutput.Standard -> {
                 print(output.content)
-                System.exit(successStatus)
+                System.exit(0)
             }
             is CommandOutput.Error -> {
                 System.err.print(output.errorMessage)
-                System.exit(errorStatus)
+                System.exit(output.errorStatus)
             }
             is CommandOutput.Unsupported -> {
                 System.err.print(output.warningMessage)
-                System.exit(warningStatus)
+                System.exit(10)
             }
         }
     }
-
-    companion object {
-        val successStatus = 0
-        val errorStatus = 42
-        val warningStatus = 10
-        val deserializationError = { name: String -> "Parameter '$name' cannot be deserialized" }
-        val missingMandatoryFieldsError = { name: String, missing: List<String> -> "Parameter '$name' is missing mandatory parameters: ${missing.joinToString(", ")}" }
-        val packageToScanForMissingFields = "org.neo4j.cloudfoundry.odb.adapter"
-    }
 }
 
+
 fun main(args: Array<String>) {
-    val generateManifest = GenerateManifestCommand(
+    val gson = Gson()
+    val yamlSerializer = YamlSerializer()
+
+    val passwordGenerator = PasswordGenerator()
+
+    val generateManifestCommand = GenerateManifestCommand(
             ManifestGenerator(
                     InstanceGroupGenerator(
                             JobGenerator(),
@@ -76,11 +85,17 @@ fun main(args: Array<String>) {
                     ),
                     StemcellGenerator(),
                     ReleaseGenerator(),
-                    PasswordGenerator()
+                    passwordGenerator //TODO: admin password should be defined in the Bosh release??
             ),
-            YamlSerializer()
+            yamlSerializer
     )
     val dashboardUrlCommand = DashboardUrlCommand()
+    val createBindingCommand = CreateBindingCommand(CredentialsRepository(passwordGenerator), gson)
 
-    App(generateManifest, dashboardUrlCommand).execute(args)
+    App(generateManifestCommand,
+        dashboardUrlCommand,
+        createBindingCommand,
+        gson,
+        yamlSerializer
+    ).execute(args)
 }
