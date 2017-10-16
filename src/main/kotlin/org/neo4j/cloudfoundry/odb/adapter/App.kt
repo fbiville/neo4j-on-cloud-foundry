@@ -3,6 +3,7 @@ package org.neo4j.cloudfoundry.odb.adapter
 import com.google.gson.Gson
 import org.neo4j.cloudfoundry.odb.adapter.command.CreateBindingCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.DashboardUrlCommand
+import org.neo4j.cloudfoundry.odb.adapter.command.DeleteBindingCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.GenerateManifestCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.ServiceAdapterCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.converter.BoshVmConverter
@@ -20,6 +21,9 @@ import org.neo4j.cloudfoundry.odb.adapter.command.generator.PasswordGenerator
 import org.neo4j.cloudfoundry.odb.adapter.command.generator.ReleaseGenerator
 import org.neo4j.cloudfoundry.odb.adapter.command.generator.StemcellGenerator
 import org.neo4j.cloudfoundry.odb.adapter.command.persistence.CredentialsRepository
+import org.neo4j.cloudfoundry.odb.adapter.command.supplier.AdminPasswordSupplier
+import org.neo4j.cloudfoundry.odb.adapter.command.supplier.BoltUriSupplier
+import org.neo4j.cloudfoundry.odb.adapter.command.supplier.DriverSupplier
 import org.neo4j.cloudfoundry.odb.adapter.domain.BoshVms
 import org.neo4j.cloudfoundry.odb.adapter.domain.RequestParameters
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
@@ -35,6 +39,7 @@ class MainCommand
 class App(private val generateManifestCommand: GenerateManifestCommand,
           private val dashboardUrlCommand: DashboardUrlCommand,
           private val createBindingCommand: CreateBindingCommand,
+          private val deleteBindingCommand: DeleteBindingCommand,
           private val gson: Gson,
           private val yamlSerializer: YamlSerializer) {
 
@@ -44,6 +49,7 @@ class App(private val generateManifestCommand: GenerateManifestCommand,
                 .addSubcommand("generate-manifest", generateManifestCommand)
                 .addSubcommand("dashboard-url", dashboardUrlCommand)
                 .addSubcommand("create-binding", createBindingCommand)
+                .addSubcommand("remove-binding", deleteBindingCommand)
                 .registerConverter(Manifest::class.java, ManifestConverter(yamlSerializer, mandatoryFieldsValidator))
                 .registerConverter(RequestParameters::class.java, RequestParametersConverter(gson))
                 .registerConverter(Plan::class.java, PlanConverter(gson, mandatoryFieldsValidator))
@@ -90,11 +96,26 @@ fun main(args: Array<String>) {
             yamlSerializer
     )
     val dashboardUrlCommand = DashboardUrlCommand()
-    val createBindingCommand = CreateBindingCommand(CredentialsRepository(passwordGenerator), gson)
-
+    val credentialsRepository = CredentialsRepository(passwordGenerator)
+    val driverSupplier = DriverSupplier()
+    val boltUriSupplier = BoltUriSupplier()
+    val adminPasswordSupplier = AdminPasswordSupplier()
+    val createBindingCommand = CreateBindingCommand(
+            credentialsRepository,
+            gson,
+            driverSupplier,
+            boltUriSupplier,
+            adminPasswordSupplier)
+    val deleteBindingCommand = DeleteBindingCommand(
+            credentialsRepository,
+            driverSupplier,
+            boltUriSupplier,
+            adminPasswordSupplier
+    )
     App(generateManifestCommand,
         dashboardUrlCommand,
         createBindingCommand,
+        deleteBindingCommand,
         gson,
         yamlSerializer
     ).execute(args)

@@ -11,6 +11,7 @@ import org.junit.contrib.java.lang.system.SystemErrRule
 import org.junit.contrib.java.lang.system.SystemOutRule
 import org.neo4j.cloudfoundry.odb.adapter.command.CreateBindingCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.DashboardUrlCommand
+import org.neo4j.cloudfoundry.odb.adapter.command.DeleteBindingCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.Fixtures
 import org.neo4j.cloudfoundry.odb.adapter.command.GenerateManifestCommand
 import org.neo4j.cloudfoundry.odb.adapter.command.error.CommandOutput
@@ -30,7 +31,13 @@ class AppTest {
     private val generateManifestCommand = mock<GenerateManifestCommand>()
     private val dashboardUrlCommand = mock<DashboardUrlCommand>()
     private val createBindingCommand = mock<CreateBindingCommand>()
-    private val subject = App(generateManifestCommand, dashboardUrlCommand, createBindingCommand, Gson(), YamlSerializer())
+    private val deleteBindingCommand = mock<DeleteBindingCommand>()
+    private val subject = App(generateManifestCommand,
+                              dashboardUrlCommand,
+                              createBindingCommand,
+                              deleteBindingCommand,
+                              Gson(),
+                              YamlSerializer())
 
     @Test
     fun `generates a manifest`() {
@@ -78,6 +85,18 @@ class AppTest {
         subject.execute(arrayOf("create-binding", "awesome-binding-id", Fixtures.boshVmJson, Fixtures.manifestYaml, "{}"))
 
         assertThat(systemOut.log).isEqualTo(Fixtures.bindingJson)
+        assertThat(systemErr.log).isEmpty()
+    }
+
+    @Test
+    fun `deletes an existing binding`() {
+        exitStatus.expectSystemExitWithStatus(0)
+        whenever(deleteBindingCommand.execute())
+                .thenReturn(CommandOutput.Standard(""))
+
+        subject.execute(arrayOf("remove-binding", "awesome-binding-id", Fixtures.boshVmJson, Fixtures.manifestYaml, "{}"))
+
+        assertThat(systemOut.log).isEmpty()
         assertThat(systemErr.log).isEmpty()
     }
 }

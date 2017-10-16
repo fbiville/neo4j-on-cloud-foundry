@@ -13,9 +13,14 @@ import org.junit.Test
 import org.neo4j.cloudfoundry.odb.adapter.command.error.CommandOutput
 import org.neo4j.cloudfoundry.odb.adapter.command.persistence.CredentialsRepository
 import org.neo4j.cloudfoundry.odb.adapter.command.persistence.PersistenceError
+import org.neo4j.cloudfoundry.odb.adapter.command.supplier.AdminPasswordSupplier
+import org.neo4j.cloudfoundry.odb.adapter.command.supplier.BoltUriSupplier
+import org.neo4j.cloudfoundry.odb.adapter.command.supplier.DriverSupplier
 import org.neo4j.cloudfoundry.odb.adapter.domain.BoshVms
 import org.neo4j.cloudfoundry.odb.adapter.domain.Credentials
 import org.neo4j.cloudfoundry.odb.adapter.domain.User
+import org.neo4j.driver.v1.Driver
+import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
 import org.neo4j.harness.junit.Neo4jRule
 import org.slf4j.bridge.SLF4JBridgeHandler
 
@@ -28,7 +33,10 @@ class CreateBindingCommandTest {
 
     private val gson = Gson()
     private val userRepository = mock<CredentialsRepository>()
-    private val subject = CreateBindingCommand(userRepository, gson)
+    private val adminPasswordSupplier = mock<AdminPasswordSupplier>()
+    private val boltUriSupplier = mock<BoltUriSupplier>()
+    private val driverSupplier = mock<DriverSupplier>()
+    private val subject = CreateBindingCommand(userRepository, gson, driverSupplier, boltUriSupplier, adminPasswordSupplier)
 
     companion object {
         @JvmStatic
@@ -40,14 +48,19 @@ class CreateBindingCommandTest {
 
     @Before
     fun prepare() {
-        subject.boshVms = BoshVms(arrayOf(neo4jRule.boltURI().host))
+        val boltURI = neo4jRule.boltURI()
+        subject.boshVms = BoshVms(arrayOf(boltURI.host))
         subject.bindingId = "awesome-binding-id"
         subject.manifest = Fixtures.manifest
+        whenever(boltUriSupplier.getBoltUri(any())).thenReturn("bolt-wonderful-uri")
+        whenever(adminPasswordSupplier.getAdminPassword(any())).thenReturn("password")
+        val driver = mock<Driver>()
+        whenever(driverSupplier.getDriver("bolt-wonderful-uri", "password")).thenReturn(driver)
     }
 
     @Test
     fun `fails if no bosh VMs are provided`() {
-        subject.boshVms = BoshVms(arrayOf())
+        whenever(boltUriSupplier.getBoltUri(any())).thenReturn(null)
 
         val result = subject.execute() as CommandOutput.Error
 
@@ -57,7 +70,7 @@ class CreateBindingCommandTest {
 
     @Test
     fun `fails if the Neo4j node is unreachable`() {
-        subject.boshVms = BoshVms(arrayOf("127.9.9.1"))
+        whenever(driverSupplier.getDriver(any(), any())).thenThrow(ServiceUnavailableException::class.java)
 
         val result = subject.execute() as CommandOutput.Error
 
@@ -67,6 +80,7 @@ class CreateBindingCommandTest {
 
     @Test
     fun `fails if the Neo4j admin password is not provided`() {
+        whenever(adminPasswordSupplier.getAdminPassword(any())).thenReturn(null)
         subject.manifest = Fixtures.manifest.copy(properties = null)
         val result = subject.execute() as CommandOutput.Error
 
@@ -92,7 +106,9 @@ class CreateBindingCommandTest {
         val result = subject.execute() as CommandOutput.Error
 
         assertThat(result.errorStatus).isEqualTo(99)
-        assertThat(result.errorMessage).isEqualTo("User creation for binding 'awesome-binding-id' failed.")
+        assertThat(result.errorMessage).isEqualTo("User creation for binding 'awesome-binding-id' failed.\n" +
+                "Details: oopsie\n" +
+                "Caused by: something bad happened")
     }
 
     @Test
@@ -104,7 +120,9 @@ class CreateBindingCommandTest {
         val result = subject.execute() as CommandOutput.Error
 
         assertThat(result.errorStatus).isEqualTo(99)
-        assertThat(result.errorMessage).isEqualTo("User creation for binding 'awesome-binding-id' failed.")
+        assertThat(result.errorMessage).isEqualTo("User creation for binding 'awesome-binding-id' failed.\n" +
+                "Details: oopsie\n" +
+                "Caused by: something bad happened")
     }
 
     @Test

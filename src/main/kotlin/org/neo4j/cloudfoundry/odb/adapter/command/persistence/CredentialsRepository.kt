@@ -26,5 +26,13 @@ class CredentialsRepository(val passwordGenerator: PasswordGenerator) {
             return Credentials(User(userId, password))
         }
     }
+
+    @Throws(PersistenceError::class)
+    fun remove(driver: Driver, userId: String) {
+        driver.session(AccessMode.WRITE).use {
+            it.run("CALL dbms.security.deleteUser({username})",
+                    mapOf(Pair("username", userId)))
+        }
+    }
 }
 

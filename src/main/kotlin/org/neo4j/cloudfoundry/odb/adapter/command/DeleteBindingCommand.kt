@@ -1,6 +1,5 @@
 package org.neo4j.cloudfoundry.odb.adapter.command
 
-import com.google.gson.Gson
 import org.neo4j.cloudfoundry.odb.adapter.CommandErrors
 import org.neo4j.cloudfoundry.odb.adapter.command.error.CommandOutput
 import org.neo4j.cloudfoundry.odb.adapter.command.persistence.CredentialsRepository
@@ -15,42 +14,50 @@ import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
 import org.neo4j.driver.v1.Driver
 import org.neo4j.driver.v1.exceptions.Neo4jException
 import org.neo4j.driver.v1.exceptions.ServiceUnavailableException
-import picocli.CommandLine
 import picocli.CommandLine.Command
+import picocli.CommandLine.Parameters
 
-@Command(name = "create-binding")
-class CreateBindingCommand(private val credentialsRepository: CredentialsRepository,
-                           private val gson: Gson,
+@Command(name = "remove-binding")
+class DeleteBindingCommand(private val credentialsRepository: CredentialsRepository,
                            private val driverSupplier: DriverSupplier,
                            private val boltUriSupplier: BoltUriSupplier,
                            private val adminPasswordSupplier: AdminPasswordSupplier) : ServiceAdapterCommand {
 
-    @CommandLine.Parameters(index = "0", arity = "1")
+    @Parameters(index = "0", arity = "1")
     lateinit var bindingId: String
 
-    @CommandLine.Parameters(index = "1", arity = "1")
+    @Parameters(index = "1", arity = "1")
     lateinit var boshVms: BoshVms
 
-    @CommandLine.Parameters(index = "2", arity = "1")
+    @Parameters(index = "2", arity = "1")
     lateinit var manifest: Manifest
 
-    @CommandLine.Parameters(index = "3", arity = "1")
+    @Parameters(index = "3", arity = "1")
     lateinit var requestParams: RequestParameters
 
     override fun execute(): CommandOutput {
-        return try {
-            val driver = instantiateDriver()
-            when (driver) {
-                is Either.Left<CommandOutput.Error> -> driver.value
-                is Either.Right<Driver> -> insertUser(driver)
+        val maybeDriver = instantiateDriver()
+        return when (maybeDriver) {
+            is Either.Left<CommandOutput.Error> -> maybeDriver.value
+            is Either.Right<Driver> -> {
+                try {
+                    val driver = maybeDriver.value
+                    if (!credentialsRepository.exists(driver, bindingId)) {
+                        val error = CommandErrors.bindingDoesNotExistError
+                        return CommandOutput.Error(error.first, error.second(bindingId))
+                    }
+                    credentialsRepository.remove(driver, bindingId)
+                    CommandOutput.Standard("")
+                } catch (e: PersistenceError) {
+                    val userDeletionError = CommandErrors.userDeletionError
+                    return CommandOutput.Error(userDeletionError.first, userDeletionError.second(bindingId, e))
+                } catch (e: Neo4jException) {
+                    val unreachableVmError = CommandErrors.unreachableVmError
+                    return CommandOutput.Error(unreachableVmError.first, unreachableVmError.second(bindingId, e))
+                }
             }
-        } catch (e: PersistenceError) {
-            val error = CommandErrors.userCreationError
-            CommandOutput.Error(error.first, error.second(bindingId, e))
-        } catch (e: Neo4jException) {
-            val unreachableVmError = CommandErrors.unreachableVmError
-            CommandOutput.Error(unreachableVmError.first, unreachableVmError.second(bindingId, e))
         }
+
     }
 
     private fun instantiateDriver(): Either<CommandOutput.Error, Driver> {
@@ -64,16 +71,10 @@ class CreateBindingCommand(private val credentialsRepository: CredentialsReposit
             val error = CommandErrors.noPasswordError
             return Either.Left(CommandOutput.Error(error.first, error.second(bindingId)))
         }
-        return Either.Right(driverSupplier.getDriver(boltUri, adminPassword))
-    }
-
-    private fun insertUser(driver: Either.Right<Driver>): CommandOutput {
-        return if (credentialsRepository.exists(driver.value, bindingId)) {
-            val error = CommandErrors.bindingAlreadyExistsError
-            CommandOutput.Error(error.first, error.second(bindingId))
-        } else CommandOutput.Standard(gson.toJson(credentialsRepository.save(driver.value, bindingId)))
+        return Either.Right(driverSupplier.getDriver(
+                boltUri,
+                adminPassword
+        ))
     }
 
 }
-
-

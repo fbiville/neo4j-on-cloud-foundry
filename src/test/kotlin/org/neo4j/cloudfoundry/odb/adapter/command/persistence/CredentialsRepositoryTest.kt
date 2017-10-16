@@ -56,4 +56,11 @@ class CredentialsRepositoryTest {
                 Pair("password", "sup3r-s3cr3t")
         ))
     }
+
+    @Test
+    fun `removes existing user`() {
+        subject.remove(driver, "binding-id")
+
+        verify(session).run("CALL dbms.security.deleteUser({username})", mapOf(Pair("username", "binding-id")))
+    }
 }
