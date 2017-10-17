@@ -1,0 +1,5 @@
+check process neo4j
+  with pidfile /var/vcap/sys/run/neo4j/neo4j.pid
+  start program "/var/vcap/jobs/neo4j/bin/start_ctl"
+  stop program "/var/vcap/jobs/neo4j/bin/stop_ctl"
+  group vcap

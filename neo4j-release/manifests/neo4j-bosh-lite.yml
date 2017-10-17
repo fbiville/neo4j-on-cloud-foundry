@@ -1,0 +1,31 @@
+---
+name: neo4j
+
+releases:
+- name: neo4j
+  version: latest
+
+stemcells:
+- alias: default
+  os: ubuntu-trusty
+  version: latest
+
+update:
+  canaries: 2
+  max_in_flight: 1
+  canary_watch_time: 5000-60000
+  update_watch_time: 5000-60000
+
+instance_groups:
+- name: neo4j
+  azs: [z1, z2, z3]
+  instances: 1
+  jobs:
+  - name: neo4j
+    release: neo4j
+    properties: {}
+  vm_type: default
+  stemcell: default
+  persistent_disk: 10240
+  networks:
+  - name: default

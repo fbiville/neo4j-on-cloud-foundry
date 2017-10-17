@@ -1,0 +1,14 @@
+---
+name: neo4j
+
+templates:
+  stop_ctl.bash: bin/stop_ctl
+  start_ctl.bash: bin/start_ctl
+  common.bash: bin/common.bash
+  neo4j.conf.erb: conf/neo4j.conf
+
+packages:
+  - neo4j
+  - openjdk_1.8.0
+
+properties: {}

@@ -1,0 +1,8 @@
+set -ex
+
+cd ${BOSH_INSTALL_TARGET}
+tar --strip 1 -zxvf ${BOSH_COMPILE_TARGET}/neo4j/neo4j-*.tar.gz
+if [[ $? != 0 ]] ; then
+  echo "Cannot unpack Neo4j"
+  exit 1
+fi

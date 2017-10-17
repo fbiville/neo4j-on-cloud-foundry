@@ -1,0 +1,8 @@
+neo4j/neo4j-enterprise-3.2.5-unix.tar.gz:
+  size: 91521640
+  object_id: aa423c58-35fb-45bb-5153-7fab87b1a986
+  sha: 895c8bcb59a6c286d6296cae94bcaf9bb275bdb5
+openjdk_1.8.0/openjdk-1.8.0_141.tar.gz:
+  size: 78460327
+  object_id: a6535098-340c-4da3-57ff-999c1ea0ccd5
+  sha: bec09ecc5092b6211f1a40367ff021d6de65279c
