@@ -8,4 +8,6 @@ mkdir -p $NEO4J_CONF
 mkdir -p /var/vcap/store/neo4j/data
 chown -R vcap:vcap $NEO4J_LOGS $RUN_DIR /var/vcap/store/neo4j/data
 
-exec /var/vcap/packages/neo4j/bin/neo4j start >> $NEO4J_LOGS/start_stdout.log 2>> $NEO4J_LOGS/start_stderr.log
+cp /var/vcap/packages/neo4j-cloud-utils/neo4j-cloud-utils.jar $NEO4J_HOME/plugins
+
+exec $NEO4J_HOME/bin/neo4j start >> $NEO4J_LOGS/start_stdout.log 2>> $NEO4J_LOGS/start_stderr.log

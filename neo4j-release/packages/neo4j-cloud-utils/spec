@@ -1,0 +1,7 @@
+---
+name: neo4j-cloud-utils
+
+dependencies: []
+
+files:
+  - neo4j/neo4j-cloud-utils.jar

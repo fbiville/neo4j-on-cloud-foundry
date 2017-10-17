@@ -1,3 +1,22 @@
+## 1 - Install Bosh lite
+
+https://bosh.io/docs/bosh-lite.html
+
+## 2 - Update Cloud Config
+
+https://bosh.io/docs/update-cloud-config.html
+
+## 3 - Upload stemcell
+
+https://bosh.io/docs/uploading-stemcells.html
+
+## 4 - Release 
+
 bosh create-release --force &&
-bosh upload-release &&
+bosh -e vbox upload-release &&
 bosh -e vbox -d neo4j deploy manifests/neo4j-bosh-lite.yml -n
+
+
+## Troubleshooting
+
+TODO

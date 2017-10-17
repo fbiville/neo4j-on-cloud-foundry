@@ -9,6 +9,7 @@ templates:
 
 packages:
   - neo4j
+  - neo4j-cloud-utils
   - openjdk_1.8.0
 
 properties: {}
