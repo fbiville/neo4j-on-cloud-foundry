@@ -6,7 +6,7 @@ import org.neo4j.cloudfoundry.odb.adapter.domain.User
 import org.neo4j.driver.v1.AccessMode
 import org.neo4j.driver.v1.Driver
 
-class CredentialsRepository(val passwordGenerator: PasswordGenerator) {
+class CredentialsRepository(private val passwordGenerator: PasswordGenerator) {
 
     @Throws(PersistenceError::class)
     fun exists(driver: Driver, bindingId: String): Boolean {
@@ -21,8 +21,12 @@ class CredentialsRepository(val passwordGenerator: PasswordGenerator) {
     fun save(driver: Driver, userId: String): Credentials {
         val password = passwordGenerator.generate()
         driver.session(AccessMode.WRITE).use {
-            it.run("CALL dbms.security.createUser({username}, {password}, false)",
-                    mapOf(Pair("username", userId), Pair("password", password)))
+            it.run("CALL dbms.security.createUser({username}, {password}, false) " +
+                    "CALL dbms.security.addRoleToUser({rolename}, {username}) " +
+                    "RETURN true",
+                    mapOf(Pair("username", userId),
+                            Pair("password", password),
+                            Pair("rolename", "architect")))
             return Credentials(User(userId, password))
         }
     }

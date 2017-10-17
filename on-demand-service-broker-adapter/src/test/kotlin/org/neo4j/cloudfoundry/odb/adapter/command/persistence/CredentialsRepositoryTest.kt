@@ -1,7 +1,6 @@
 package org.neo4j.cloudfoundry.odb.adapter.command.persistence
 
 import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.eq
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
@@ -29,7 +28,6 @@ class CredentialsRepositoryTest {
     fun prepare() {
         whenever(driver.session(any<AccessMode>())).thenReturn(session)
         whenever(session.run("CALL dbms.security.listUsers() YIELD username RETURN username")).thenReturn(statementResult)
-        whenever(session.run(eq("CALL dbms.security.createUser({username}, {password}, false)"), any<Map<String, Any>>())).thenReturn(statementResult)
         whenever(statementResult.list()).thenReturn(listOf())
     }
 
@@ -51,9 +49,12 @@ class CredentialsRepositoryTest {
         val credentials = subject.save(driver, "binding-id")
 
         assertThat(credentials).isEqualTo(Credentials(User("binding-id", "sup3r-s3cr3t")))
-        verify(session).run("CALL dbms.security.createUser({username}, {password}, false)", mapOf(
+        verify(session).run("CALL dbms.security.createUser({username}, {password}, false) " +
+                "CALL dbms.security.addRoleToUser({rolename}, {username}) " +
+                "RETURN true", mapOf(
                 Pair("username", "binding-id"),
-                Pair("password", "sup3r-s3cr3t")
+                Pair("password", "sup3r-s3cr3t"),
+                Pair("rolename", "architect")
         ))
     }
 
