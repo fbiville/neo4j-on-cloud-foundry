@@ -38,7 +38,17 @@ class MandatoryFieldsValidator {
     }
 
     private fun isMissingMandatoryField(instance: Any, field: Field): Boolean {
-        return field.isAnnotationPresent(Mandatory::class.java) && field.get(instance) == null
+        return field.isAnnotationPresent(Mandatory::class.java) && isUnset(field.get(instance))
+    }
+
+    private fun isUnset(value: Any?): Boolean {
+        return when(value) {
+            null -> true
+            is String -> value.isBlank()
+            is Array<*> -> value.isEmpty()
+            is Iterable<*> -> !value.iterator().hasNext()
+            else -> false
+        }
     }
 
     private fun streamOf(fields: Iterator<Field>): Stream<Field> {
