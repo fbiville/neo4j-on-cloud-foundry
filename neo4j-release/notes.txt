@@ -19,4 +19,4 @@ bosh -e vbox -d neo4j deploy manifests/neo4j-bosh-lite.yml -n
 
 ## Troubleshooting
 
-TODO
+bosh -e vbox -d neo4j ssh
