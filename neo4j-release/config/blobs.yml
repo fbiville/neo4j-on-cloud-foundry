@@ -1,6 +1,6 @@
 neo4j/neo4j-cloud-utils.jar:
-  size: 6777
-  sha: df7c7377506af544eee46796678dfaf8ca516a62
+  size: 6567
+  sha: a4f932104d83066e667e941964186cc6a3262da3
 neo4j/neo4j-enterprise-3.2.5-unix.tar.gz:
   size: 91521640
   object_id: aa423c58-35fb-45bb-5153-7fab87b1a986

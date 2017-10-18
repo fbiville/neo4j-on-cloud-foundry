@@ -98,12 +98,10 @@ public class SetPasswordCommand implements AdminCommand
     @Override
     public void execute( String[] args ) throws IncorrectUsage, CommandFailed
     {
-        Args parsedArgs = Args.withFlags( "force", "requires-password-change" ).parse( args );
+        Args parsedArgs = Args.parse( args );
 
         String username = parsedArgs.orphans().size() > 0 ? parsedArgs.orphans().get( 0 ) : null;
         String password = parsedArgs.orphans().size() > 1 ? parsedArgs.orphans().get( 1 ) : null;
-        boolean requiresPasswordChange = parsedArgs.getBoolean( "requires-password-change", true );
-        boolean force = parsedArgs.getBoolean( "force" );
 
         try
         {
@@ -112,7 +110,7 @@ public class SetPasswordCommand implements AdminCommand
                 throw new IncorrectUsage(
                         "Missing arguments: 'set-password' expects username and password arguments" );
             }
-            setPassword( username, password, requiresPasswordChange, force );
+            setPassword( username, password, false, true );
         }
 
         catch ( Exception e )
@@ -130,7 +128,7 @@ public class SetPasswordCommand implements AdminCommand
             throws Throwable
     {
         Config config = loadNeo4jConfig();
-        File file = CommunitySecurityModule.getInitialUserRepositoryFile( config );
+        File file = CommunitySecurityModule.getUserRepositoryFile( config );
         if ( outsideWorld.fileSystem().fileExists( file ) )
         {
             if ( force )

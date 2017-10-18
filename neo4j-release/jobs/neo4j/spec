@@ -1,9 +1,13 @@
 ---
 name: neo4j
 
+properties:
+  admin_password:
+    description: "Neo4j admin password"
+
 templates:
   stop_ctl.bash: bin/stop_ctl
-  start_ctl.bash: bin/start_ctl
+  start_ctl.bash.erb: bin/start_ctl
   common.bash: bin/common.bash
   neo4j.conf.erb: conf/neo4j.conf
 
@@ -11,5 +15,3 @@ packages:
   - neo4j
   - neo4j-cloud-utils
   - openjdk_1.8.0
-
-properties: {}

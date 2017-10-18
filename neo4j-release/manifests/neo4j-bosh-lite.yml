@@ -23,9 +23,10 @@ instance_groups:
   jobs:
   - name: neo4j
     release: neo4j
-    properties: {}
+    properties: {admin_password: todo}
   vm_type: default
   stemcell: default
   persistent_disk: 10240
   networks:
   - name: default
+
