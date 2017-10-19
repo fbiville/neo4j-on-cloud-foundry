@@ -12,8 +12,12 @@ class PlanConverter(private val gson: Gson,
 
     private val parameterName = "plan"
 
-    override fun convert(value: String): Plan {
+    override fun convert(value: String?): Plan? {
         try {
+            if (value == null || value == "null") {
+                return null
+            }
+
             val plan = gson.fromJson<Plan>(value, Plan::class.java)
             val missingMandatoryFields = mandatoryFieldsValidator.validate(plan)
             if (!missingMandatoryFields.isEmpty()) {

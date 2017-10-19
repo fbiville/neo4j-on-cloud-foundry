@@ -1,0 +1,11 @@
+---
+name: neo4j-adapter
+
+templates:
+  service-adapter: bin/service-adapter
+
+packages:
+  - neo4j-odb-adapter
+  - openjdk_1.8.0
+
+properties: {}

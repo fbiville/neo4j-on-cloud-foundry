@@ -1,0 +1,6 @@
+---
+final_name: neo4j-adapter
+blobstore:
+  provider: local
+  options:
+    blobstore_path: /tmp/neo4j-adapter-blobs

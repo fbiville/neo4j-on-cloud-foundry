@@ -6,7 +6,7 @@ import java.util.Arrays
 
 data class Plan(@Mandatory val instance_groups: Array<PlanInstanceGroup>?,
                 @Mandatory val properties: Map<String, String>?,
-                @Mandatory val update: Update?) {
+                val update: Update?) {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -1,0 +1,2 @@
+set -e
+cp neo4j-odb-adapter/odb-adapter.jar ${BOSH_INSTALL_TARGET}/odb-adapter.jar

@@ -42,5 +42,15 @@ class PlanConverterTest {
     fun `converts a valid Plan payload`() {
         assertThat(subject.convert(Fixtures.planJson)).isEqualTo(Fixtures.plan)
     }
+
+    @Test
+    fun `converts a null Plan`() {
+        assertThat(subject.convert(null)).isNull()
+    }
+
+    @Test
+    fun `converts a "null" Plan`() {
+        assertThat(subject.convert("null")).isNull()
+    }
 }
 

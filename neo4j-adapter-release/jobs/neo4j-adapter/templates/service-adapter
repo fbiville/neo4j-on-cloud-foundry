@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+
+/var/vcap/packages/openjdk_1.8.0/jre/bin/java -jar /var/vcap/packages/neo4j-odb-adapter/odb-adapter.jar "$@"

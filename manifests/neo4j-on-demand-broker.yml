@@ -1,0 +1,133 @@
+---
+name: neo4j-odb
+
+releases:
+- name: neo4j-adapter
+  version: latest
+- name: &broker-release on-demand-service-broker
+  version: 0.17.2
+- name: routing
+  version: latest
+
+stemcells:
+- alias: default
+  os: ubuntu-trusty
+  version: latest
+
+update:
+  canaries: 2
+  max_in_flight: 1
+  canary_watch_time: 5000-60000
+  update_watch_time: 5000-60000
+
+instance_groups:
+  - name: broker # this can be anything
+    instances: 1
+    vm_type: default
+    stemcell: default
+    azs: [z1, z2, z3]
+    networks:
+      - name: default
+    jobs:
+      - name: neo4j-adapter
+        release: neo4j-adapter
+      - name: broker
+        release: on-demand-service-broker
+        properties:
+          port: &broker_port 8080
+          username: broker
+          password: A8124C67-90A0-4BEB-AB32-DE4E35E53E23
+          disable_ssl_cert_verification: true
+          cf:
+            url: https://api.islington.services-enablement.cf-app.com
+            authentication: # either client_credentials or user_credentials, not both as shown
+              url: https://uaa.islington.services-enablement.cf-app.com
+              user_credentials:
+                username: admin
+                password: ((cf.user_credentials.password))
+          bosh:
+            url: https://35.189.248.241:25555
+            authentication:
+              uaa:
+                client_id: ((bosh.authentication.username))
+                client_secret: ((bosh.authentication.password))
+          service_adapter:
+            path: /var/vcap/jobs/neo4j-adapter/bin/service-adapter
+          service_deployment:
+            releases:
+              - name: neo4j
+                version: 0+dev.1
+                jobs: [neo4j] # Service Author will specify list of jobs required
+            stemcell: # every instance group in the service deployment has the same stemcell
+              os: ubuntu-trusty
+              version: 3468 # Exact stemcell version
+          service_catalog:
+            id: 1992E8DD-7A84-41F2-AD51-D7624F788B63
+            service_name: neo4j
+            service_description: Neo4j Graph Database
+            bindable: true
+            plan_updatable: false
+            plans:
+              - name: enterprise
+                plan_id: E5CC6956-9E73-4F22-A4A1-437C8756B799
+                description: Neo4j Enterprise Cluster
+                instance_groups: # resource mapping for the instance groups defined by the Service Author
+                  - name: neo4j
+                    vm_type: default
+                    instances: 1
+                    networks: [default]
+                    azs: [z1, z2, z3]
+                    persistent_disk_type: 1GB
+                update: # optional
+                  canaries: 1 # required
+                  max_in_flight: 2  # required
+                  canary_watch_time: 1000-30000 # required
+                  update_watch_time: 1000-30000 # required
+                  serial: true # optional
+                properties: {} # valid property key-value pairs are defined by the Service Author
+      - name: route_registrar
+        release: routing
+        properties:
+          nats:
+            machines: [10.244.0.129]
+            port: 4222
+            user: nats
+            password: ((cf.nats.password))
+          route_registrar:
+            routes:
+              - name: neo4j-odb
+                registration_interval: 20s
+                port: *broker_port
+                uris: [neo4j-service-broker.islington.services-enablement.cf-app.com]
+
+  - name: register-broker
+    lifecycle: errand
+    instances: 1
+    jobs:
+      - name: register-broker
+        release: *broker-release
+        properties:
+          broker_name: &broker_name neo4j-service-broker
+          broker_uri: https://neo4j-service-broker.islington.services-enablement.cf-app.com
+          disable_ssl_cert_verification: true
+          cf:
+            api_url: https://api.islington.services-enablement.cf-app.com
+            admin_username: admin
+            admin_password: ((cf.user_credentials.password)) ## replace
+    vm_type: default
+    stemcell: default
+    networks: [{name: default}]
+    azs: [z1]
+
+  - name: deregister-broker
+    lifecycle: errand
+    instances: 1
+    jobs:
+      - name: deregister-broker
+        release: *broker-release
+        properties:
+          broker_name: *broker_name
+    vm_type: default
+    stemcell: default
+    networks: [{name: default}]
+    azs: [z1]

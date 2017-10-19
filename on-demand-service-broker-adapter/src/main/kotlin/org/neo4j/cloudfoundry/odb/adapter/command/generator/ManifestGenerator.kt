@@ -35,7 +35,7 @@ class ManifestGenerator(val instanceGroupGenerator: InstanceGroupGenerator,
                 name = serviceDeployment.deployment_name,
                 releases = serviceDeployment.releases!!.map(releaseGenerator::generateRelease).toTypedArray(),
                 stemcells = arrayOf(stemcellGenerator.generateStemcell(serviceDeployment.stemcell!!)),
-                update = plan.update,
+                update = plan.update, //TODO: provide default
                 instance_groups = Either.rightsArray(instanceGroups),
                 properties = ManifestProperties(passwordGenerator.generate()))
         )

@@ -1,0 +1,6 @@
+---
+name: neo4j-odb-adapter
+
+dependencies: []
+
+files: [neo4j-odb-adapter/odb-adapter.jar]

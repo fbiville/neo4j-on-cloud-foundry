@@ -48,5 +48,14 @@ class ManifestConverterTest {
         assertThat(result).isEqualTo(Fixtures.manifest)
     }
 
+    @Test
+    fun `converts null values`() {
+        assertThat(subject.convert(null)).isNull()
+    }
+
+    @Test
+    fun `converts "null" values`() {
+        assertThat(subject.convert("null")).isNull()
+    }
 }
 

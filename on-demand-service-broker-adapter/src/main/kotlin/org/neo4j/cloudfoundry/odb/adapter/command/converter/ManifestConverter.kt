@@ -11,9 +11,12 @@ class ManifestConverter(private val yamlSerializer: YamlSerializer,
 
     private val parameterName = "manifest"
 
-    override fun convert(value: String): Manifest {
+    override fun convert(value: String?): Manifest? {
         try {
-            val manifest = yamlSerializer.deserialize(Manifest::class.java, value)
+            if (value == null || value == "null") {
+             return null
+            }
+            val manifest = yamlSerializer.deserialize(Manifest::class.java, value.orEmpty())
             checkMandatoryFields(parameterName, manifest)
             return manifest
         } catch (e: YAMLException) {
