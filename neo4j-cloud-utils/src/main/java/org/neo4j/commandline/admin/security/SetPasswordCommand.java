@@ -19,148 +19,85 @@
  */
 package org.neo4j.commandline.admin.security;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.util.Optional;
-
 import org.neo4j.commandline.admin.AdminCommand;
-import org.neo4j.commandline.admin.AdminCommandSection;
 import org.neo4j.commandline.admin.CommandFailed;
 import org.neo4j.commandline.admin.IncorrectUsage;
 import org.neo4j.commandline.admin.OutsideWorld;
-import org.neo4j.commandline.arguments.Arguments;
 import org.neo4j.helpers.Args;
 import org.neo4j.kernel.configuration.Config;
+import org.neo4j.kernel.impl.security.Credential;
+import org.neo4j.kernel.impl.security.User;
 import org.neo4j.logging.NullLogProvider;
 import org.neo4j.server.configuration.ConfigLoader;
 import org.neo4j.server.security.auth.CommunitySecurityModule;
-import org.neo4j.kernel.impl.security.Credential;
 import org.neo4j.server.security.auth.FileUserRepository;
-import org.neo4j.kernel.impl.security.User;
+
+import java.io.File;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
 
 import static org.neo4j.kernel.api.security.UserManager.INITIAL_USER_NAME;
 
-public class SetPasswordCommand implements AdminCommand
-{
-    public static class Provider extends AdminCommand.Provider
-    {
+public class SetPasswordCommand implements AdminCommand {
 
-        public Provider()
-        {
-            super( "set-password" );
-        }
+    private final Path homeDir;
+    private final Path configDir;
+    private final OutsideWorld outsideWorld;
 
-
-        @Override
-        public Arguments allArguments()
-        {
-            return new Arguments()
-                    .withMandatoryPositionalArgument(0, "user")
-                    .withMandatoryPositionalArgument(1, "password");
-        }
-
-        @Override
-        public String summary()
-        {
-            return "Sets the password of the admin user ('" + INITIAL_USER_NAME + "').";
-        }
-
-        @Override
-        public AdminCommandSection commandSection()
-        {
-            return AuthenticationCommandSection.instance();
-        }
-
-        @Override
-        public String description()
-        {
-            return "Sets the initial (admin) user.";
-        }
-
-        @Override
-        public AdminCommand create( Path homeDir, Path configDir, OutsideWorld outsideWorld )
-        {
-            return new SetPasswordCommand( homeDir, configDir, outsideWorld );
-        }
-    }
-
-    final Path homeDir;
-    final Path configDir;
-    OutsideWorld outsideWorld;
-
-    public SetPasswordCommand( Path homeDir, Path configDir, OutsideWorld outsideWorld )
-    {
+    public SetPasswordCommand(Path homeDir, Path configDir, OutsideWorld outsideWorld) {
         this.homeDir = homeDir;
         this.configDir = configDir;
         this.outsideWorld = outsideWorld;
     }
 
     @Override
-    public void execute( String[] args ) throws IncorrectUsage, CommandFailed
-    {
-        Args parsedArgs = Args.withFlags( "force", "requires-password-change" ).parse( args );
-
-        String username = parsedArgs.orphans().size() > 0 ? parsedArgs.orphans().get( 0 ) : null;
-        String password = parsedArgs.orphans().size() > 1 ? parsedArgs.orphans().get( 1 ) : null;
-        boolean requiresPasswordChange = parsedArgs.getBoolean( "requires-password-change", true );
-        boolean force = parsedArgs.getBoolean( "force" );
-
-        try
-        {
-            if ( username == null || password == null )
-            {
-                throw new IncorrectUsage(
-                        "Missing arguments: 'set-password' expects username and password arguments" );
-            }
-            setPassword( username, password, requiresPasswordChange, force );
-        }
-
-        catch ( Exception e )
-        {
-            throw new CommandFailed( "Failed run 'set-password' on '" + username + "': " + e.getMessage(), e );
-        }
-        catch ( Throwable t )
-        {
-            throw new CommandFailed( "Failed run 'set-password' on '" + username + "': " + t.getMessage(),
-                    new RuntimeException( t.getMessage() ) );
+    public void execute(String[] args) throws IncorrectUsage, CommandFailed {
+        try {
+            setPassword(parsePassword(args));
+        } catch (Exception e) {
+            throw new CommandFailed("Failed run 'set-password' on '" + INITIAL_USER_NAME + "': " + e.getMessage(), e);
+        } catch (Throwable t) {
+            throw new CommandFailed("Failed run 'set-password' on '" + INITIAL_USER_NAME + "': " + t.getMessage(), new RuntimeException(t.getMessage()));
         }
     }
 
-    private void setPassword( String username, String password, boolean requirePasswordChange, boolean force )
-            throws Throwable
-    {
-        Config config = loadNeo4jConfig();
-        File file = CommunitySecurityModule.getInitialUserRepositoryFile( config );
-        if ( outsideWorld.fileSystem().fileExists( file ) )
-        {
-            if ( force )
-            {
-                outsideWorld.fileSystem().deleteFile( file );
-            }
-            else
-            {
-                throw new IncorrectUsage( "Initial user already set. Overwrite this user with --force" );
-            }
+    private String parsePassword(String[] args) throws IncorrectUsage {
+        List<String> orphans = Args.parse(args).orphans();
+        int orphanCount = orphans.size();
+        if (orphans.isEmpty() || orphanCount > 1) {
+            throw new IncorrectUsage(String.format("Missing argument: 'set-password' expects a single argument (password), %d given", orphanCount));
         }
+        return orphans.get(0);
+    }
 
-        FileUserRepository userRepository =
-                new FileUserRepository( outsideWorld.fileSystem(), file, NullLogProvider.getInstance() );
+    private void setPassword(String password) throws Throwable {
+        File file = CommunitySecurityModule.getUserRepositoryFile(loadNeo4jConfig());
+
+        FileUserRepository userRepository = new FileUserRepository(outsideWorld.fileSystem(), file, NullLogProvider.getInstance());
         userRepository.start();
-        userRepository.create(
-                new User.Builder( username, Credential.forPassword( password ) )
-                        .withRequiredPasswordChange( requirePasswordChange )
-                        .build()
-        );
+        upsert(password, userRepository);
         userRepository.shutdown();
-        outsideWorld.stdOutLine( "Changed password for user '" + username + "'" );
+        outsideWorld.stdOutLine("Changed password for user '" + INITIAL_USER_NAME + "'");
     }
 
-    private Config loadNeo4jConfig()
-    {
-        ConfigLoader configLoader = new ConfigLoader();
-        return configLoader.loadConfig(
-                Optional.of( homeDir.toFile() ),
-                Optional.of( configDir.resolve( "neo4j.conf" ).toFile() ) );
+    private void upsert(String password, FileUserRepository userRepository) throws Exception {
+        User existingUser = userRepository.getUserByName(INITIAL_USER_NAME);
+        User newUser = new User.Builder(INITIAL_USER_NAME, Credential.forPassword(password))
+                .withRequiredPasswordChange(false)
+                .build();
+
+        if (existingUser == null) {
+            userRepository.create(newUser);
+        } else {
+            userRepository.update(existingUser, newUser);
+        }
+    }
+
+    private Config loadNeo4jConfig() {
+        return ConfigLoader.loadConfig(
+                Optional.of(homeDir.toFile()),
+                Optional.of(configDir.resolve("neo4j.conf").toFile()));
     }
 
 }
