@@ -15,6 +15,7 @@ import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Assertions.assertThat
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestProperties
 import org.neo4j.cloudfoundry.odb.adapter.domain.plan.Plan
+import org.neo4j.cloudfoundry.odb.adapter.domain.update.Update
 
 class ManifestGeneratorTest {
 
@@ -86,5 +87,17 @@ class ManifestGeneratorTest {
                 as Either.Left<List<ManifestCommandError>>
 
         assertThat(errors.value).containsExactly(MigrationNotSupported)
+    }
+
+    @Test
+    fun `provides update if plan does not provide`() {
+        val errors = subject.generateManifest(Fixtures.serviceDeployment, Fixtures.plan.copy(update = null), mapOf())
+                as Either.Right<Manifest>
+
+        assertThat(errors.value.update).isEqualTo(Update(
+                canaries = 2,
+                max_in_flight = 1,
+                canary_watch_time = "5000-60000",
+                update_watch_time = "5000-60000"))
     }
 }

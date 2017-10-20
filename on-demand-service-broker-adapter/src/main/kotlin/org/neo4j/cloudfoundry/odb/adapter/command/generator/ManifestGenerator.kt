@@ -9,6 +9,7 @@ import org.neo4j.cloudfoundry.odb.adapter.domain.servicedeployment.ServiceDeploy
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestInstanceGroup
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestProperties
+import org.neo4j.cloudfoundry.odb.adapter.domain.update.Update
 
 class ManifestGenerator(val instanceGroupGenerator: InstanceGroupGenerator,
                         val stemcellGenerator: StemcellGenerator,
@@ -35,7 +36,7 @@ class ManifestGenerator(val instanceGroupGenerator: InstanceGroupGenerator,
                 name = serviceDeployment.deployment_name,
                 releases = serviceDeployment.releases!!.map(releaseGenerator::generateRelease).toTypedArray(),
                 stemcells = arrayOf(stemcellGenerator.generateStemcell(serviceDeployment.stemcell!!)),
-                update = plan.update, //TODO: provide default
+                update = plan.update ?: defaultUpdate,
                 instance_groups = Either.rightsArray(instanceGroups),
                 properties = ManifestProperties(passwordGenerator.generate()))
         )
@@ -47,6 +48,15 @@ class ManifestGenerator(val instanceGroupGenerator: InstanceGroupGenerator,
         return {
             instanceGroupGenerator.generateInstanceGroup(it, serviceDeployment)
         }
+    }
+
+    companion object {
+        val defaultUpdate = Update(
+            canaries = 2,
+            max_in_flight = 1,
+            canary_watch_time = "5000-60000",
+            update_watch_time = "5000-60000"
+        )
     }
 }
 
