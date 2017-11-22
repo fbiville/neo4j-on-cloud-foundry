@@ -86,12 +86,11 @@ fun main(args: Array<String>) {
     val generateManifestCommand = GenerateManifestCommand(
             ManifestGenerator(
                     InstanceGroupGenerator(
-                            JobGenerator(),
+                            JobGenerator(passwordGenerator),
                             NetworkGenerator()
                     ),
                     StemcellGenerator(),
-                    ReleaseGenerator(),
-                    passwordGenerator //TODO: admin password should be defined in the Bosh release??
+                    ReleaseGenerator()
             ),
             yamlSerializer
     )

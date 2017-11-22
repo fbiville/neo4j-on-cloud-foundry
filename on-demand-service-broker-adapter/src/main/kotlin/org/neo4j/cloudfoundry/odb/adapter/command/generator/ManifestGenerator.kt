@@ -8,13 +8,11 @@ import org.neo4j.cloudfoundry.odb.adapter.domain.plan.Plan
 import org.neo4j.cloudfoundry.odb.adapter.domain.servicedeployment.ServiceDeployment
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestInstanceGroup
-import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestProperties
 import org.neo4j.cloudfoundry.odb.adapter.domain.update.Update
 
 class ManifestGenerator(val instanceGroupGenerator: InstanceGroupGenerator,
                         val stemcellGenerator: StemcellGenerator,
-                        val releaseGenerator: ReleaseGenerator,
-                        val passwordGenerator: PasswordGenerator) {
+                        val releaseGenerator: ReleaseGenerator) {
 
     fun generateManifest(serviceDeployment: ServiceDeployment,
                          plan: Plan,
@@ -38,7 +36,7 @@ class ManifestGenerator(val instanceGroupGenerator: InstanceGroupGenerator,
                 stemcells = arrayOf(stemcellGenerator.generateStemcell(serviceDeployment.stemcell!!)),
                 update = plan.update ?: defaultUpdate,
                 instance_groups = Either.rightsArray(instanceGroups),
-                properties = ManifestProperties(passwordGenerator.generate()))
+                properties = mapOf())
         )
     }
 

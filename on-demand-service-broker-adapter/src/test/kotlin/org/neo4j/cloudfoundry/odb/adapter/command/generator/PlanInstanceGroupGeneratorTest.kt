@@ -9,6 +9,7 @@ import org.neo4j.cloudfoundry.odb.adapter.domain.Either
 import org.neo4j.cloudfoundry.odb.adapter.command.error.JobNotFound
 import org.neo4j.cloudfoundry.odb.adapter.command.error.ManifestCommandError
 import org.neo4j.cloudfoundry.odb.adapter.command.error.ReleaseNotFound
+import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.JobProperties
 import org.neo4j.cloudfoundry.odb.adapter.domain.plan.PlanInstanceGroup
 import org.neo4j.cloudfoundry.odb.adapter.domain.servicedeployment.ServiceDeployment
 import org.neo4j.cloudfoundry.odb.adapter.domain.servicedeployment.ServiceRelease
@@ -39,7 +40,7 @@ class PlanInstanceGroupGeneratorTest {
             releases = arrayOf(release),
             stemcell = ServiceStemcell("ubuntu-trusty", "3445.11"))
 
-    private val expectedManifestJob = ManifestJob("neo4j", "neo4j", properties = mapOf())
+    private val expectedManifestJob = ManifestJob("neo4j", "neo4j", properties = JobProperties("cop1-2-soop"))
     private val expectedNetwork = ManifestNetwork("default")
 
     @Before

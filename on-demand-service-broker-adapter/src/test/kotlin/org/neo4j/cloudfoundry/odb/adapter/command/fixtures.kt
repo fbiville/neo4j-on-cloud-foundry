@@ -1,11 +1,11 @@
 package org.neo4j.cloudfoundry.odb.adapter.command
 
 import org.neo4j.cloudfoundry.odb.adapter.domain.BoshVms
+import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.JobProperties
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestInstanceGroup
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestJob
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestNetwork
-import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestProperties
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestRelease
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestStemcell
 import org.neo4j.cloudfoundry.odb.adapter.domain.plan.Plan
@@ -17,11 +17,12 @@ import org.neo4j.cloudfoundry.odb.adapter.domain.update.Update
 
 class Fixtures {
     companion object {
+        val manifestJob = ManifestJob("neo4j", "neo4j", properties = JobProperties("cop1-2-soop"))
         val manifestInstanceGroup = ManifestInstanceGroup(
                 name = "neo4j",
                 azs = arrayOf("z1", "z2", "z3"),
                 instances = 1,
-                jobs = arrayOf(ManifestJob("neo4j", "neo4j", properties = mapOf())),
+                jobs = arrayOf(manifestJob),
                 vm_type = "default",
                 stemcell = "default",
                 persistent_disk_type = "10240",
@@ -40,7 +41,7 @@ class Fixtures {
                 stemcells = arrayOf(manifestStemcell),
                 update = update,
                 instance_groups = arrayOf(manifestInstanceGroup),
-                properties = ManifestProperties("pff"))
+                properties = mapOf())
         val release = ServiceRelease(
                 name = "neo4j",
                 version = "latest",
@@ -92,15 +93,14 @@ class Fixtures {
             |  jobs:
             |  - name: neo4j
             |    release: neo4j
-            |    properties: {}
+            |    properties:
+            |       admin_password: cop1-2-soop
             |  vm_type: default
             |  stemcell: default
             |  persistent_disk_type: 10240
             |  networks:
             |  - name: default
-            |
-            |properties:
-            |  admin_password: pff
+            |properties: {}
             """.trimMargin()
 
         val serviceDeploymentJson = """{

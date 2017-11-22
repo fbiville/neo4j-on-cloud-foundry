@@ -12,12 +12,16 @@ class AdminPasswordSupplierTest {
     fun `retrieves the admin password`() {
         val result = subject.getAdminPassword(Fixtures.manifest)
 
-        assertThat(result).isEqualTo("pff")
+        assertThat(result).isEqualTo("cop1-2-soop")
     }
+
+
 
     @Test
     fun `retrieves null if no admin password is set`() {
-        val result = subject.getAdminPassword(Fixtures.manifest.copy(properties = null))
+        val job = Fixtures.manifestJob.copy(properties = null)
+        val instanceGroup = Fixtures.manifestInstanceGroup.copy(jobs = arrayOf(job))
+        val result = subject.getAdminPassword(Fixtures.manifest.copy(instance_groups = arrayOf(instanceGroup)))
 
         assertThat(result).isNull()
     }

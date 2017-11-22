@@ -13,7 +13,6 @@ import org.neo4j.cloudfoundry.odb.adapter.command.error.ReleaseNotFound
 import org.neo4j.cloudfoundry.odb.adapter.domain.Either
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Assertions.assertThat
 import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.Manifest
-import org.neo4j.cloudfoundry.odb.adapter.domain.manifest.ManifestProperties
 import org.neo4j.cloudfoundry.odb.adapter.domain.plan.Plan
 import org.neo4j.cloudfoundry.odb.adapter.domain.update.Update
 
@@ -22,13 +21,10 @@ class ManifestGeneratorTest {
     private val instanceGroupGenerator = mock<InstanceGroupGenerator>()
     private val stemcellGenerator = mock<StemcellGenerator>()
     private val releaseGenerator = mock<ReleaseGenerator>()
-    private val passwordGenerator = mock<PasswordGenerator>()
     private val subject = ManifestGenerator(
             instanceGroupGenerator,
             stemcellGenerator,
-            releaseGenerator,
-            passwordGenerator)
-    private val password = "c0p1-2-soop!"
+            releaseGenerator)
 
     @Before
     fun prepare() {
@@ -38,7 +34,6 @@ class ManifestGeneratorTest {
                 .thenReturn(Fixtures.manifestStemcell)
         whenever(releaseGenerator.generateRelease(Fixtures.release))
                 .thenReturn(Fixtures.manifestRelease)
-        whenever(passwordGenerator.generate()).thenReturn(password)
     }
 
     @Test
@@ -52,7 +47,7 @@ class ManifestGeneratorTest {
                 .hasReleases(Fixtures.manifestRelease)
                 .hasStemcells(Fixtures.manifestStemcell)
                 .hasInstance_groups(Fixtures.manifestInstanceGroup)
-                .hasProperties(ManifestProperties(password))
+                .hasProperties(mapOf<String, String>())
     }
 
     @Test

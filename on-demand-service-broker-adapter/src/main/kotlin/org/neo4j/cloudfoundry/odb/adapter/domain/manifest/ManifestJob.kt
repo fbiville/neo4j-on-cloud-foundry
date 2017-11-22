@@ -8,4 +8,4 @@ data class ManifestJob(@Mandatory var name: String,
                        @Mandatory var release: String,
                        var consumes: Map<String, String>? = null,
                        var provides: Map<String, String>? = null,
-                       @Mandatory var properties: Map<String, String>)
+                       @Mandatory var properties: JobProperties?)

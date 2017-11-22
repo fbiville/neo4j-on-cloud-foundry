@@ -8,6 +8,7 @@ import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.BeforeClass
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.neo4j.cloudfoundry.odb.adapter.command.error.CommandOutput
@@ -81,7 +82,7 @@ class CreateBindingCommandTest {
     @Test
     fun `fails if the Neo4j admin password is not provided`() {
         whenever(adminPasswordSupplier.getAdminPassword(any())).thenReturn(null)
-        subject.manifest = Fixtures.manifest.copy(properties = null)
+        subject.manifest = Fixtures.manifest.copy(properties = mapOf())
         val result = subject.execute() as CommandOutput.Error
 
         assertThat(result.errorStatus).isEqualTo(299)
